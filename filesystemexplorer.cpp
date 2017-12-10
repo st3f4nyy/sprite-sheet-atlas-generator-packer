@@ -3,31 +3,44 @@
 #include <QDir>
 #include <QDockWidget>
 #include <QFileDialog>
+#include <QHBoxLayout>
+#include <QStringListModel>
 
 FileSystemExplorer::FileSystemExplorer(QWidget* parent) :
     QWidget(parent)
 {
+    mTreeLabel = new QLabel(this);
     mTreeView = new QTreeView(this);
-    mTreeView->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(mTreeView,&QTreeView::clicked,this,&FileSystemExplorer::onTreeElementClicked);
-    connect(mTreeView,&QTreeView::expanded,this,&FileSystemExplorer::onTreeElementClicked);
-    connect(mTreeView,&QTreeView::doubleClicked,this,&FileSystemExplorer::onTreeElementDoubleClicked);
+    mSelectedListView = new QListView(this);
+    setBasePath(QDir::homePath());
     this->initTreeViewActions();
 
 
-    mLayout = new QVBoxLayout(this);
-    mLayout->addWidget(mTreeView);
-    this->setLayout(mLayout);
-    mTreeView->show();
+    this->initLayouts();
+}
+
+void FileSystemExplorer::initLayouts()
+{
+    QHBoxLayout* completeLayout = new QHBoxLayout(this);
+    QVBoxLayout* treeLayout = new QVBoxLayout();
+    treeLayout->addWidget(mTreeLabel);
+    treeLayout->addWidget(mTreeView);
+    completeLayout->addLayout(treeLayout);
+    completeLayout->addWidget(mSelectedListView);
+    this->setLayout(completeLayout);
 }
 
 void FileSystemExplorer::initTreeViewActions()
 {
+    connect(mTreeView,&QTreeView::clicked,this,&FileSystemExplorer::onTreeElementClicked);
+    connect(mTreeView,&QTreeView::expanded,this,&FileSystemExplorer::onTreeElementClicked);
+    connect(mTreeView,&QTreeView::doubleClicked,this,&FileSystemExplorer::onTreeElementDoubleClicked);
+
+    mTreeView->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(mTreeView,
             SIGNAL(customContextMenuRequested(const QPoint &)),
             this,
-            SLOT(onCustomContextMenu(const QPoint &)));
-    setBasePath(QDir::homePath());
+            SLOT(onCustomContextMenuTree(const QPoint &)));
     mTreeMenu = new QMenu(this);
 
     mTreeActionAddFile = new QAction("Add file",this);
@@ -56,6 +69,8 @@ void FileSystemExplorer::initTreeViewActions()
 void FileSystemExplorer::setBasePath(const QString& path)
 {
     mCurrentBasePath = path;
+    mTreeLabel->setText(mCurrentBasePath);
+    mTreeLabel->setMaximumWidth(mTreeView->width());
     mDirModel = new QDirModel(this);
     mDirModel->setFilter(QDir::AllEntries|
                          QDir::NoDot|QDir::Readable);
@@ -67,7 +82,7 @@ void FileSystemExplorer::setBasePath(const QString& path)
     mTreeView->hideColumn(3);
 }
 
-void FileSystemExplorer::onCustomContextMenu(const QPoint &point)
+void FileSystemExplorer::onCustomContextMenuTree(const QPoint &point)
 {
     QModelIndex index = mTreeView->indexAt(point);
     if (index.isValid()) {
@@ -125,12 +140,27 @@ void FileSystemExplorer::setTreeActionsForFolder()
 
 void FileSystemExplorer::addSelectedFileInTree()
 {
-    std::printf("file\n");
+    if(!mSelectedFiles.contains(mLastSelectedFile))
+    {
+        mSelectedFiles.append(mLastSelectedFile);
+        this->updateSelectedFileList();
+    }
 }
 
 void FileSystemExplorer::addSelectedFilesInFolderTree()
 {
-    std::printf("folder\n");
+    const auto fileInfoList = QDir(mLastSelectedFile.absoluteFilePath()).entryInfoList();
+    bool changed = false;
+    for(int i=0; i<fileInfoList.size(); i++)
+    {
+        const auto file = fileInfoList.at(i);
+        if(file.isFile() && !mSelectedFiles.contains(file))
+        {
+            mSelectedFiles.append(file);
+            changed = true;
+        }
+    }
+    if(changed) this->updateSelectedFileList();
 }
 
 void FileSystemExplorer::setSelectedFolderInTreeAsRoot()
@@ -148,4 +178,24 @@ void FileSystemExplorer::selectRootFolderInTree()
         setBasePath(dir);
     }
 
+}
+
+void FileSystemExplorer::updateSelectedFileList()
+{
+    QAbstractItemModel* model = mSelectedListView->model();
+    if(model==Q_NULLPTR)
+    {
+        model = new QStringListModel();
+        mSelectedListView->setModel(model);
+    }
+    model->removeRows(0,model->rowCount());
+    for(int i=0; i<mSelectedFiles.length();i++)
+    {
+        const auto file = mSelectedFiles.at(i);
+        const auto fileName = file.completeBaseName()
+                .append(".")
+                .append(file.completeSuffix());
+        model->insertRow(i);
+        model->setData(model->index(i,0),QVariant(fileName));
+    }
 }

@@ -7,6 +7,9 @@
 #include <QVBoxLayout>
 #include <QObject>
 #include <QMenu>
+#include <QLabel>
+#include <QListView>
+#include <QList>
 
 class FileSystemExplorer : public QWidget
 {
@@ -15,8 +18,8 @@ public:
     explicit FileSystemExplorer(QWidget* parent = Q_NULLPTR);
     void setBasePath(const QString& basePath);
 
-public slots:
-    void onCustomContextMenu(const QPoint& point);
+private slots:
+    void onCustomContextMenuTree(const QPoint& point);
     void addSelectedFileInTree();
     void addSelectedFilesInFolderTree();
     void setSelectedFolderInTreeAsRoot();
@@ -29,13 +32,14 @@ private:
     void removeAllTreeActions();
     void setTreeActionsForFile();
     void setTreeActionsForFolder();
-
+    void initLayouts();
+    void updateSelectedFileList();
 
 private:
+    QLabel* mTreeLabel;
     QTreeView* mTreeView;
     QDirModel* mDirModel;
     QString mCurrentBasePath;
-    QVBoxLayout* mLayout;
     QMenu* mTreeMenu;
     QFileInfo mLastSelectedFile;
 
@@ -44,6 +48,9 @@ private:
     QAction* mTreeActionSetFolderAsRoot;
     QAction* mTreeActionSelectRootDir;
     QAction* mTreeActionSeparator;
+
+    QListView* mSelectedListView;
+    QList<QFileInfo> mSelectedFiles;
 
 };
 
