@@ -5,6 +5,7 @@
 #include <QFileDialog>
 #include <QHBoxLayout>
 #include <QStringListModel>
+#include "configuration.h"
 
 FileSystemExplorer::FileSystemExplorer(QWidget* parent) :
     QWidget(parent)
@@ -12,7 +13,7 @@ FileSystemExplorer::FileSystemExplorer(QWidget* parent) :
     mTreeLabel = new QLabel(this);
     mTreeView = new QTreeView(this);
     mSelectedListView = new QListView(this);
-    setBasePath(QDir::homePath());
+    setBasePath(Configuration::searchFileTreePath());
     this->initTreeViewActions();
 
 
@@ -69,6 +70,7 @@ void FileSystemExplorer::initTreeViewActions()
 void FileSystemExplorer::setBasePath(const QString& path)
 {
     mCurrentBasePath = path;
+    Configuration::searchFileTreePath(path);
     mTreeLabel->setText(mCurrentBasePath);
     mTreeLabel->setMaximumWidth(mTreeView->width());
     mDirModel = new QDirModel(this);
