@@ -5,10 +5,13 @@
 #include <QStyleFactory>
 #include <QMainWindow>
 #include <QDesktopWidget>
+#include <QHBoxLayout>
 #include "filesystemexplorer.h"
 #include "configuration.h"
+#include "imagevisualization.h"
+#include "exportsettings.h"
 
-class MainApp
+class MainApp : QWidget
 {
 public:
   MainApp(QApplication* qapp)
@@ -20,10 +23,17 @@ public:
 
   int run()
   {
-      FileSystemExplorer* tree = new FileSystemExplorer();
+      QHBoxLayout* mainLayout = new QHBoxLayout(this);
+      FileSystemExplorer* tree = new FileSystemExplorer(mMainWindow);
+      ExportSettings* exportSettings = new ExportSettings(mMainWindow);
+      ImageVisualization* imageVisualization = new ImageVisualization(exportSettings,mMainWindow);
+      mainLayout->addWidget(tree);
+      mainLayout->addWidget(imageVisualization);
+      mainLayout->addWidget(exportSettings);
       mMainWindow->setGeometry(Configuration::mainWindowRect());
       mMainWindow->setWindowTitle("Sprite Sheet Atlas Generator Packer");
-      mMainWindow->setCentralWidget(tree);
+      this->setLayout(mainLayout);
+      mMainWindow->setCentralWidget(this);
       mMainWindow->show();
       int ret = mQApp->exec();
       Configuration::mainWindowRect(mMainWindow->geometry());

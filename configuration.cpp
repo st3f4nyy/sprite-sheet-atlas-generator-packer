@@ -3,8 +3,9 @@
 #include <QDesktopWidget>
 #include <QDir>
 
-const QString MAIN_WINDOW_RECT = QString("MAIN_WINDOW_RECT");
-const QString TREE_FILE_PATH = QString("TREE_FILE_PATH");
+static const QString MAIN_WINDOW_RECT = QString("MAIN_WINDOW_RECT");
+static const QString TREE_FILE_PATH = QString("TREE_FILE_PATH");
+static const QString BASE_RESOLUTION = QString("BASE_RESOLUTION");
 
 QSettings sSettings(QSettings::UserScope,"meduseware","sprite sheet atlas generator packer");
 
@@ -53,4 +54,15 @@ QString Configuration::searchFileTreePath()
 void Configuration::searchFileTreePath(const QString& val)
 {
     get().setValue(TREE_FILE_PATH,val);
+}
+
+void Configuration::baseResolution(const Resolution& res)
+{
+    get().setValue(BASE_RESOLUTION,res.name());
+}
+
+Resolution Configuration::baseResolution()
+{
+    QString name = get().value(BASE_RESOLUTION).toString();
+    return Resolution::getResolutionByName(name);
 }

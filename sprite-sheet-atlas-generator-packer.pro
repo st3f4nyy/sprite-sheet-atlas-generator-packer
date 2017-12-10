@@ -9,8 +9,16 @@ DEFINES += QT_DEPRECATED_WARNINGS # The following define makes your compiler emi
 SOURCES += \
     main.cpp \
     filesystemexplorer.cpp \
-    configuration.cpp
+    configuration.cpp \
+    imagevisualization.cpp \
+    imagecreator.cpp \
+    exportsettings.cpp \
+    resolution.cpp
 
 HEADERS += \
     filesystemexplorer.h \
-    configuration.h
+    configuration.h \
+    imagevisualization.h \
+    imagecreator.h \
+    exportsettings.h \
+    resolution.h

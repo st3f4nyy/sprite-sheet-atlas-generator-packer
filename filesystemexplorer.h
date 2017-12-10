@@ -1,5 +1,4 @@
-#ifndef FILESYSTEMEXPLORER_H
-#define FILESYSTEMEXPLORER_H
+#pragma once
 
 #include <QTreeWidget>
 #include <QTreeView>
@@ -54,4 +53,3 @@ private:
 
 };
 
-#endif // FILESYSTEMEXPLORER_H
