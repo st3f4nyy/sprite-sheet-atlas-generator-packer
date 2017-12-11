@@ -36,10 +36,15 @@ Resolution Resolution::getResolutionByName(QString name)
     const auto ress = resolutions();
     for(auto i: ress)
     {
-        if(i.name().compare(name))
+        if(i.name().compare(name)==0)
             return i;
     }
     return getDefault();
+}
+
+Resolution::Resolution()
+{
+    *this=getDefault();
 }
 
 Resolution::Resolution(unsigned int res, const QString &name)

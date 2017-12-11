@@ -1,6 +1,8 @@
 #pragma once
 
 #include <QWidget>
+#include <QComboBox>
+#include "resolution.h"
 
 class ExportSettings : public QWidget
 {
@@ -8,7 +10,14 @@ class ExportSettings : public QWidget
 public:
     explicit ExportSettings(QWidget *parent = nullptr);
 
-signals:
+private slots:
+    void onBaseResolutionChange(const QString &);
 
-public slots:
+private:
+    void populateBaseResolutions();
+
+
+private:
+    QComboBox* mBaseResolutionComboBox;
+    Resolution mBaseResolution;
 };

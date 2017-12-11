@@ -4,6 +4,7 @@
 class Resolution
 {
 public:
+    Resolution();
     Resolution(unsigned int res, const QString& name);
     unsigned int res() const;
     QString name() const;
