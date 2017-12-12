@@ -9,9 +9,13 @@ class ExportSettings : public QWidget
     Q_OBJECT
 public:
     explicit ExportSettings(QWidget *parent = nullptr);
+    Resolution getBaseResolution() const;
+
+signals:
+    void resolutionChanged(const Resolution& res);
 
 private slots:
-    void onBaseResolutionChange(const QString &);
+    void onBaseResolutionChangeInCombobox(const QString &);
 
 private:
     void populateBaseResolutions();

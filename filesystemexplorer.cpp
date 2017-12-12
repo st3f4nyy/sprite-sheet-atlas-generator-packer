@@ -200,4 +200,13 @@ void FileSystemExplorer::updateSelectedFileList()
         model->insertRow(i);
         model->setData(model->index(i,0),QVariant(fileName));
     }
+    this->sendUpdateFileListChange();
+}
+
+void FileSystemExplorer::sendUpdateFileListChange()
+{
+    QStringList paths;
+    for(auto file : mSelectedFiles)
+        paths.append(file.absoluteFilePath());
+    this->selectedFilesChanged(paths);
 }

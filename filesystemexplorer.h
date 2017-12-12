@@ -17,6 +17,9 @@ public:
     explicit FileSystemExplorer(QWidget* parent = Q_NULLPTR);
     void setBasePath(const QString& basePath);
 
+signals:
+    void selectedFilesChanged(QStringList seletectedFiles);
+
 private slots:
     void onCustomContextMenuTree(const QPoint& point);
     void addSelectedFileInTree();
@@ -33,6 +36,7 @@ private:
     void setTreeActionsForFolder();
     void initLayouts();
     void updateSelectedFileList();
+    void sendUpdateFileListChange();
 
 private:
     QLabel* mTreeLabel;

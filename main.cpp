@@ -10,6 +10,7 @@
 #include "configuration.h"
 #include "imagevisualization.h"
 #include "exportsettings.h"
+#include <QResizeEvent>
 
 class MainApp : QWidget
 {
@@ -21,14 +22,20 @@ public:
       setDarkTheme();
   }
 
+  void resizeEvent(QResizeEvent* resize) override
+  {
+      mImageVisualization->onContainerResize(resize->size());
+  }
+
   int run()
   {
       QHBoxLayout* mainLayout = new QHBoxLayout(this);
       FileSystemExplorer* tree = new FileSystemExplorer(mMainWindow);
       ExportSettings* exportSettings = new ExportSettings(mMainWindow);
-      ImageVisualization* imageVisualization = new ImageVisualization(exportSettings,mMainWindow);
+      mImageVisualization =
+              new ImageVisualization(exportSettings,tree,mMainWindow);
       mainLayout->addWidget(tree);
-      mainLayout->addWidget(imageVisualization);
+      mainLayout->addWidget(mImageVisualization);
       mainLayout->addWidget(exportSettings);
       mMainWindow->setGeometry(Configuration::mainWindowRect());
       mMainWindow->setWindowTitle("Sprite Sheet Atlas Generator Packer");
@@ -76,6 +83,7 @@ private:
 private:
   QApplication* mQApp;
   QMainWindow* mMainWindow;
+  ImageVisualization* mImageVisualization;
 };
 
 int main(int argc, char *argv[])

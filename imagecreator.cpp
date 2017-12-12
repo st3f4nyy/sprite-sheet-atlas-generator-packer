@@ -7,8 +7,11 @@
 class ImageDescriptor
 {
 public:
-    ImageDescriptor(QImage* image)
+    ImageDescriptor(QImage* image, const QString& path)
     {
+        this->croped=QRect(-1,-1,-1,-1);
+        this->position=QRect(-1,-1,-1,-1);
+        this->path=path;
         this->image = image;
     }
 
@@ -95,41 +98,44 @@ void ImageCreator::cropEmptyFromImage(ImageDescriptor* descriptor)
     QRect cropRect;
     int x,y,cropAt;
     {   // calculate TOP Crop
-        cropAt=0;
-        for( y=0 ; y < size.height() ; y++ )
-        for( x=0 ; x < size.width()  ; x++ )
+        cropAt=-1;
+        for( y=0 ; y < size.height() && cropAt<0; y++ )
+        for( x=0 ; x < size.width()  && cropAt<0; x++ )
         {
             const auto pixel = image->pixelColor(x,y);
-            if(pixel.alpha()!=0) {cropAt=y; break;}
+            if(pixel.alpha()!=0) {cropAt=y;}
         }
         cropRect.setTop(cropAt);
     }
     {   // calculate LEFT Crop
-        for( x=0; x < size.width(); x++ )
-        for( y=0; y < size.height(); y++)
+        cropAt=-1;
+        for( x=0; x < size.width() && cropAt<0 ; x++ )
+        for( y=0; y < size.height() && cropAt<0; y++)
         {
             const auto pixel = image->pixelColor(x,y);
-            if(pixel.alpha()!=0) {cropAt=x; ;break;}
+            if(pixel.alpha()!=0) cropAt=x;
         }
         cropRect.setLeft(cropAt);
     }
     {
         // calculate RIGHT Crop
-        for(x=size.width()-1; x>=0 ; x--)
-        for(y=0; y < size.height(); y++)
+        cropAt=-1;
+        for(x=size.width()-1; x>=0 && cropAt<0 ; x--)
+        for(y=0; y < size.height() && cropAt<0 ; y++)
         {
             const auto pixel = image->pixelColor(x,y);
-            if(pixel.alpha()!=0) {cropAt=x; ;break;}
+            if(pixel.alpha()!=0) cropAt=x;
         }
         cropRect.setRight(cropAt);
     }
     {
         // calculate BOTTOM Crop
-        for(y=size.height()-1; y >=0 ; y--)
-        for(x=0; x < size.width(); x++)
+        cropAt=-1;
+        for(y=size.height()-1; y >=0 && cropAt<0 ; y--)
+        for(x=0; x < size.width() && cropAt<0 ; x++)
         {
             const auto pixel = image->pixelColor(x,y);
-            if(pixel.alpha()!=0) {cropAt=y; break;}
+            if(pixel.alpha()!=0) cropAt=y;
         }
         cropRect.setBottom(cropAt);
     }
@@ -161,7 +167,7 @@ QStringList ImageCreator::setFiles(const QStringList &filePaths)
             errors.append(reader->errorString());
         } else
         {
-            mFetchedImages.append(new ImageDescriptor(image));
+            mFetchedImages.append(new ImageDescriptor(image,path));
         }
     }
 
@@ -180,21 +186,36 @@ void ImageCreator::orderImagesBySize()
 }
 
 
-std::tuple<ImageCreator::Error,const QImage*> ImageCreator::render()
+QString ImageCreator::getErrorMessage(Error error, ImageDescriptor* des)
+{
+    switch(error)
+    {
+
+    case INSUFICIENT_SPACE:
+        return QString("Not enough texture space to put the image %1").arg(des->path);
+    case EMPTY_IMAGE:
+        return QString("The image is empty %1").arg(des->path);
+    default:
+    case NO_ERROR: return "";
+    }
+}
+
+std::tuple<QString,const QImage*> ImageCreator::render()
 {
     if(mImage!=nullptr) delete mImage;
     mImage = new QImage(mWorkingResolution.res(),
                         mWorkingResolution.res(),
                         QImage::Format_ARGB32);
+    mImage->fill(Qt::transparent);
     for(auto des : mFetchedImages) this->cropEmptyFromImage(des);
     this->orderImagesBySize();
     for(auto des : mFetchedImages)
     {
         auto error = addImage(des);
         if(error!=NO_ERROR)
-            return std::tuple<ImageCreator::Error,const QImage*>(error,nullptr);
+            return RenderRet(getErrorMessage(error,des),nullptr);
     }
-    return std::tuple<ImageCreator::Error,const QImage*>(NO_ERROR,mImage);
+    return RenderRet("",mImage);
 }
 
 ImageCreator::Error ImageCreator::addImage(ImageDescriptor* imageDescriptor)
@@ -211,66 +232,53 @@ ImageCreator::Error ImageCreator::addImage(ImageDescriptor* imageDescriptor)
             mImage->setPixelColor(rect.x()+x,rect.y()+y,pixel);
         }
     }
+    rect.setWidth(rect.width()-1);rect.setHeight(rect.height()-1);
     imageDescriptor->position=rect;
     return NO_ERROR;
 }
 
 QRect ImageCreator::searchForEmptySpace(ImageDescriptor* imageDescriptor)
 {
-    auto findNextCleanPixel = [this] (QPoint point) -> QPoint {
+    QImage* targetImage= imageDescriptor->image;
+
+    auto findNextCleanPixel = [&] (QPoint point) -> QPoint {
         int x=point.x(), y= point.y();
-        while(y<=mImage->height())
+        for(; x < mImage->width() && x+ targetImage->width() <= mImage->width(); x++)
         {
-            while(x<=mImage->width())
+            for(; y < mImage->height() && y + targetImage->height() <= mImage->height(); y++)
             {
-                const auto pixel = mImage->pixelColor(x,y);
-                if(pixel.alpha()==0)
+                bool used=false;
+                int tx1=x, ty1=y, tx2=x+targetImage->width()-1,ty2=y+targetImage->height()-1;
+                for(auto imgDes : mFetchedImages)
                 {
-                    return QPoint(x,y);
-                } else
-                {
-                    x++;
-                    if(x>mImage->width())
+                    int x1,x2,y1,y2; imgDes->position.getCoords(&x1,&y1,&x2,&y2);
+                    used = tx1 >= x1 && tx1 <= x2 &&
+                           ((ty1 >= y1 && ty1 <=y2) || (ty2 >= y1 && ty2 <=y2));
+                    if(used)
                     {
-                        x = 0;
-                        y++;
+                        y=y2+1;
+                        break;
                     }
                 }
+                if(!used) return QPoint(x,y);
             }
+            y=0;
         }
+
+
         return QPoint(mImage->width()+1,mImage->height()+1); // invalid
     };
 
-    auto enoughSpace = [this](QPoint point, QImage* image) -> bool {
-        if(point.x()+image->width()>mImage->width()) return false;
-        if(point.y()+image->height()>mImage->height()) return false;
 
-        for(int x=0; x<image->width(); x++)
-        {
-            for(int y=0; y < image->height() ; y++)
-            {
-                const auto pixel = mImage->pixelColor(x+point.x(),y+point.y());
-                if(pixel.alpha()!=0) return false;
-            }
-        }
 
-        return true;
-    };
-
-    for(QPoint point(0,0);
-        point.x() <= mImage->width() && point.y() <= mImage->height()
-        && point.x()>0 && point.y()>0;
-        point = findNextCleanPixel(point))
+    QPoint point = findNextCleanPixel(QPoint(0,0));
+    if(point.x() < mImage->width() && point.y() < mImage->height())
     {
-        if(enoughSpace(point,imageDescriptor->image))
-        {
-            QPoint topLeft = QPoint(point.x(),point.y());
-            QPoint bottomRight =
-                    QPoint(point.x()+imageDescriptor->image->width(),
-                           point.y()+imageDescriptor->image->height());
-            return QRect(topLeft,bottomRight);
-        }
+        QPoint topLeft = QPoint(point.x(),point.y());
+        QPoint bottomRight =
+                QPoint(point.x()+targetImage->width()-1,
+                       point.y()+targetImage->height()-1);
+        return QRect(topLeft,bottomRight);
     }
-
     return QRect(0,0,0,0);
 }

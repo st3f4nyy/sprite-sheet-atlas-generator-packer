@@ -23,13 +23,18 @@ void ExportSettings::populateBaseResolutions()
     }
     mBaseResolutionComboBox->setCurrentText(mBaseResolution.name());
     connect(mBaseResolutionComboBox,&QComboBox::currentTextChanged,
-            this,&ExportSettings::onBaseResolutionChange);
+            this,&ExportSettings::onBaseResolutionChangeInCombobox);
 }
 
-void ExportSettings::onBaseResolutionChange(const QString &name)
+void ExportSettings::onBaseResolutionChangeInCombobox(const QString &name)
 {
     mBaseResolution = Resolution::getResolutionByName(name);
     Configuration::baseResolution(mBaseResolution);
+    this->resolutionChanged(mBaseResolution);;
 }
 
 
+Resolution ExportSettings::getBaseResolution() const
+{
+    return mBaseResolution;
+}
