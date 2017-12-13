@@ -23,13 +23,13 @@ public:
     void onContainerResize(const QSize& size);
 
 private slots:
-    void resolutionChanged(const Resolution& resolution);
     void renderButtonPressed(bool checked);
 
 private:
     void setResolution(const Resolution& res);
     QImage getTransparencyImage(const Resolution& res);
     void setPixmap(const QImage& pixmap);
+    void ensureTransparencyImageResolution(const Resolution& res);
 
 private:
     QRect mSize;

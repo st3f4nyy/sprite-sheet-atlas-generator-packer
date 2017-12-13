@@ -12,13 +12,11 @@ ImageVisualization::ImageVisualization(ExportSettings* exportSettings,
     mRenderButton = new QPushButton("Render",this);
     mExportSettings = exportSettings;
     mFileSystemExplorer = explorer;
-    connect(mExportSettings,&ExportSettings::resolutionChanged,
-            this,&ImageVisualization::resolutionChanged);
     connect(mRenderButton,&QPushButton::clicked,
             this,&ImageVisualization::renderButtonPressed);
     mContainerSize = QSize(parent->geometry().width(),parent->geometry().height());
 
-    setResolution(mExportSettings->getBaseResolution());
+    setResolution(Resolution::R256);
     QVBoxLayout* layout = new QVBoxLayout(this);
     layout->addWidget(mDisplayLabel);
     QHBoxLayout* buttonLayout = new QHBoxLayout();
@@ -48,11 +46,6 @@ void ImageVisualization::setPixmap(const QImage& image)
     if(&mCurrentImage != &image) mCurrentImage=image;
     mDisplayLabel->setPixmap(QPixmap::fromImage(image)
                 .scaled(size,size, Qt::KeepAspectRatio));
-}
-
-void ImageVisualization::resolutionChanged(const Resolution& res)
-{
-    this->setResolution(res);
 }
 
 QImage ImageVisualization::getTransparencyImage(const Resolution& res)
@@ -86,6 +79,14 @@ QImage ImageVisualization::getTransparencyImage(const Resolution& res)
     return img;
 }
 
+void ImageVisualization::ensureTransparencyImageResolution(const Resolution &res)
+{
+    if(mTransParencyImage.width()!=res.resint() || mTransParencyImage.height()!=res.resint())
+    {
+        mTransParencyImage = getTransparencyImage(res);
+    }
+}
+
 void ImageVisualization::renderButtonPressed(bool){
     ImageCreator::RenderRet r = mImageCreator.render(
                 mFileSystemExplorer->getSelectedFilesPath(),
@@ -98,6 +99,7 @@ void ImageVisualization::renderButtonPressed(bool){
     }
     else
     {
+        ensureTransparencyImageResolution(Resolution(image->height()));
         QImage finalImg = mTransParencyImage;
         for(int x=0; x < finalImg.width(); x++)
         {

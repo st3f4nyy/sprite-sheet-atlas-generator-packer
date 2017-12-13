@@ -6,7 +6,9 @@ class Resolution
 public:
     Resolution();
     Resolution(unsigned int res, const QString& name);
+    Resolution(unsigned int res);
     unsigned int res() const;
+    int resint() const {return (int) res();}
     QString name() const;
 
     static Resolution getResolutionByName(QString name);

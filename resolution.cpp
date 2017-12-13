@@ -53,6 +53,12 @@ Resolution::Resolution(unsigned int res, const QString &name)
     mName = name;
 }
 
+Resolution::Resolution(unsigned int res)
+{
+    mRes=res;
+    mName=QString("%1x%1").arg(QString::number(res));
+}
+
 unsigned int Resolution::res() const
 {
     return mRes;
