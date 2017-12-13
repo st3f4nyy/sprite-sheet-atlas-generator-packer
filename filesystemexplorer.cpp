@@ -210,3 +210,11 @@ void FileSystemExplorer::sendUpdateFileListChange()
         paths.append(file.absoluteFilePath());
     this->selectedFilesChanged(paths);
 }
+
+QStringList FileSystemExplorer::getSelectedFilesPath()
+{
+    QStringList r;
+    for(auto f : mSelectedFiles)
+        r.append(f.absoluteFilePath());
+    return r;
+}

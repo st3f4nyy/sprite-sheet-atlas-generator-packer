@@ -16,6 +16,7 @@ class FileSystemExplorer : public QWidget
 public:
     explicit FileSystemExplorer(QWidget* parent = Q_NULLPTR);
     void setBasePath(const QString& basePath);
+    QStringList getSelectedFilesPath();
 
 signals:
     void selectedFilesChanged(QStringList seletectedFiles);

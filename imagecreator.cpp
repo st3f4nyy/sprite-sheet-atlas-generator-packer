@@ -84,6 +84,11 @@ void ImageCreator::clearFetchedImages()
 void ImageCreator::setResolution(const Resolution &res)
 {
     mWorkingResolution = res;
+    if(mImage!=nullptr) delete mImage;
+    mImage = new QImage(mWorkingResolution.res(),
+                        mWorkingResolution.res(),
+                        QImage::Format_ARGB32);
+    mImage->fill(Qt::transparent);
 }
 
 const Resolution& ImageCreator::getResolution()
@@ -169,6 +174,7 @@ QStringList ImageCreator::setFiles(const QStringList &filePaths)
         {
             mFetchedImages.append(new ImageDescriptor(image,path));
         }
+        delete reader;
     }
 
     return errors;
@@ -200,13 +206,10 @@ QString ImageCreator::getErrorMessage(Error error, ImageDescriptor* des)
     }
 }
 
-std::tuple<QString,const QImage*> ImageCreator::render()
+std::tuple<QString,const QImage*> ImageCreator::render(const QStringList& files,const Resolution& res)
 {
-    if(mImage!=nullptr) delete mImage;
-    mImage = new QImage(mWorkingResolution.res(),
-                        mWorkingResolution.res(),
-                        QImage::Format_ARGB32);
-    mImage->fill(Qt::transparent);
+    this->setResolution(res);
+    this->setFiles(files);
     for(auto des : mFetchedImages) this->cropEmptyFromImage(des);
     this->orderImagesBySize();
     for(auto des : mFetchedImages)
@@ -248,7 +251,7 @@ QRect ImageCreator::searchForEmptySpace(ImageDescriptor* imageDescriptor)
             for(; y < mImage->height() && y + targetImage->height() <= mImage->height(); y++)
             {
                 bool used=false;
-                int tx1=x, ty1=y, tx2=x+targetImage->width()-1,ty2=y+targetImage->height()-1;
+                int tx1=x, ty1=y, /*tx2=x+targetImage->width()-1,*/ty2=y+targetImage->height()-1;
                 for(auto imgDes : mFetchedImages)
                 {
                     int x1,x2,y1,y2; imgDes->position.getCoords(&x1,&y1,&x2,&y2);

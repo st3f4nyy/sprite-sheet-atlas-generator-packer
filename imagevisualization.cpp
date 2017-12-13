@@ -12,15 +12,13 @@ ImageVisualization::ImageVisualization(ExportSettings* exportSettings,
     mRenderButton = new QPushButton("Render",this);
     mExportSettings = exportSettings;
     mFileSystemExplorer = explorer;
-    connect(mFileSystemExplorer,&FileSystemExplorer::selectedFilesChanged,
-            this,&ImageVisualization::selectedFilesChanged);
     connect(mExportSettings,&ExportSettings::resolutionChanged,
             this,&ImageVisualization::resolutionChanged);
     connect(mRenderButton,&QPushButton::clicked,
             this,&ImageVisualization::renderButtonPressed);
     mContainerSize = QSize(parent->geometry().width(),parent->geometry().height());
 
-    setResolution();
+    setResolution(mExportSettings->getBaseResolution());
     QVBoxLayout* layout = new QVBoxLayout(this);
     layout->addWidget(mDisplayLabel);
     QHBoxLayout* buttonLayout = new QHBoxLayout();
@@ -36,36 +34,29 @@ void ImageVisualization::onContainerResize(const QSize& size)
     setPixmap(mCurrentImage);
 }
 
-void ImageVisualization::setResolution()
+void ImageVisualization::setResolution(const Resolution& res)
 {
-    Resolution res = mExportSettings->getBaseResolution();
-    mImageCreator.setResolution(res);
     if(mDisplayLabel==nullptr) mDisplayLabel=new QLabel(this);
-    this->drawTransparency();
+    mTransParencyImage = getTransparencyImage(res);
+    if(mCurrentImage.isNull()) mCurrentImage=mTransParencyImage;
+    setPixmap(mCurrentImage);
 }
 
 void ImageVisualization::setPixmap(const QImage& image)
 {
     int size = mContainerSize.height() * 0.75;
+    if(&mCurrentImage != &image) mCurrentImage=image;
     mDisplayLabel->setPixmap(QPixmap::fromImage(image)
                 .scaled(size,size, Qt::KeepAspectRatio));
 }
 
-void ImageVisualization::selectedFilesChanged(QStringList seletectedFiles)
+void ImageVisualization::resolutionChanged(const Resolution& res)
 {
-    const auto errors = mImageCreator.setFiles(seletectedFiles);
-    if(errors.empty()==false)
-        QMessageBox::critical(this,"error",errors.at(0));
+    this->setResolution(res);
 }
 
-void ImageVisualization::resolutionChanged(const Resolution&)
+QImage ImageVisualization::getTransparencyImage(const Resolution& res)
 {
-    this->setResolution();
-}
-
-QImage ImageVisualization::getTransparencyImage()
-{
-    Resolution res = mExportSettings->getBaseResolution();
     QImage img(res.res(),res.res(),QImage::Format_ARGB32);
     auto fillRect = [&] (const QRect& rect, const QColor& color) {
         for(int x=rect.left(); x <= rect.right() && x < img.width(); x++)
@@ -79,7 +70,7 @@ QImage ImageVisualization::getTransparencyImage()
     QColor black (100,100,100);
     QColor white (200,200,200);
     bool toggle=true;
-    const int BLOCK_SIZE=16;
+    const int BLOCK_SIZE=res.res()/16;
     for(int x=0; x*BLOCK_SIZE < img.width(); x++)
     {
         toggle=!toggle;
@@ -95,23 +86,19 @@ QImage ImageVisualization::getTransparencyImage()
     return img;
 }
 
-void ImageVisualization::drawTransparency()
-{
-    mCurrentImage = getTransparencyImage();
-    setPixmap(mCurrentImage);
-}
-
 void ImageVisualization::renderButtonPressed(bool){
-    std::tuple<QString,const QImage*> r = mImageCreator.render();
+    ImageCreator::RenderRet r = mImageCreator.render(
+                mFileSystemExplorer->getSelectedFilesPath(),
+                mExportSettings->getBaseResolution());
     QString error = std::get<0>(r);
     const QImage* image = std::get<1>(r);
     if(error.length()!=0)
     {
-        QMessageBox::critical(this,"Error",error);
+        QMessageBox::critical(this,"Rendering error",error);
     }
     else
     {
-        QImage finalImg = getTransparencyImage();
+        QImage finalImg = mTransParencyImage;
         for(int x=0; x < finalImg.width(); x++)
         {
             for(int y=0; y < finalImg.height(); y++)

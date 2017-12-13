@@ -20,12 +20,11 @@ public:
     const QStringList& supportedWriteFormats();
 
     ImageCreator();
-    void setResolution(const Resolution& res);
-    const Resolution& getResolution();
-    QStringList setFiles(const QStringList& files);
-    RenderRet render();
-
+    RenderRet render(const QStringList& files,const Resolution& res);
 private:
+    const Resolution& getResolution();
+    void setResolution(const Resolution& res);
+    QStringList setFiles(const QStringList& files);
     void clearFetchedImages();
     void orderImagesBySize();
     void cropEmptyFromImage(ImageDescriptor* image);

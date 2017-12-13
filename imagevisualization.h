@@ -23,14 +23,12 @@ public:
     void onContainerResize(const QSize& size);
 
 private slots:
-    void selectedFilesChanged(QStringList seletectedFiles);
     void resolutionChanged(const Resolution& resolution);
     void renderButtonPressed(bool checked);
 
 private:
-    void setResolution();
-    QImage getTransparencyImage();
-    void drawTransparency();
+    void setResolution(const Resolution& res);
+    QImage getTransparencyImage(const Resolution& res);
     void setPixmap(const QImage& pixmap);
 
 private:
@@ -42,6 +40,7 @@ private:
     QPushButton* mExportButton;
     QPushButton* mRenderButton;
     QImage mCurrentImage;
+    QImage mTransParencyImage;
     QSize mContainerSize;
 };
 
