@@ -3,7 +3,9 @@
 #include <QImage>
 #include <QRect>
 #include <tuple>
+#include <functional>
 #include "resolution.h"
+#include "exportsettings.h"
 
 class ImageDescriptor;
 
@@ -20,7 +22,9 @@ public:
     const QStringList& supportedWriteFormats();
 
     ImageCreator();
-    RenderRet render(const QStringList& files,const Resolution& res);
+    RenderRet render(const QStringList& files,
+                     const ExportSettings* settings,
+                     std::function<void(int,QString)> showProgress);
 private:
     const Resolution& getResolution();
     void setResolution(const Resolution& res);
@@ -36,6 +40,7 @@ private:
     Resolution mWorkingResolution;
     QList<ImageDescriptor*> mFetchedImages;
     QImage* mImage;
+    std::function<void(int,QString)> mShowProgress;
 };
 
 

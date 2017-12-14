@@ -206,9 +206,12 @@ QString ImageCreator::getErrorMessage(Error error, ImageDescriptor* des)
     }
 }
 
-std::tuple<QString,const QImage*> ImageCreator::render(const QStringList& files,const Resolution& res)
+ImageCreator::RenderRet ImageCreator::render(const QStringList& files,
+                                             const ExportSettings* settings,
+                                             std::function<void(int,QString)> showProgress)
 {
-    this->setResolution(res);
+    mShowProgress = showProgress;
+    this->setResolution(settings->getBaseResolution());
     this->setFiles(files);
     for(auto des : mFetchedImages) this->cropEmptyFromImage(des);
     this->orderImagesBySize();
